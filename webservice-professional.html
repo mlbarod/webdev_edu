@@ -1,0 +1,1352 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="비개발자를 위한 웹서비스 개발 과정 발표 자료" />
+  <title>웹서비스는 어떻게 만들어질까?</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      --ink: #171b2d;
+      --muted: #677087;
+      --paper: #f7f8fc;
+      --white: #fff;
+      --line: #dfe3ed;
+      --purple: #6c4cff;
+      --purple-soft: #eeeaff;
+      --green: #1a9c69;
+      --green-soft: #e2f8ee;
+      --orange: #f1753d;
+      --orange-soft: #fff0e7;
+      --blue: #2376d8;
+      --blue-soft: #e9f3ff;
+      --yellow: #f3b61f;
+      --shadow: 0 22px 60px rgba(28, 35, 63, .12);
+      --radius: 28px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #e9ebf2;
+      font-family: "Noto Sans KR", system-ui, sans-serif;
+      overflow: hidden;
+    }
+    button { font: inherit; }
+    svg { display: block; }
+
+    .deck {
+      height: 100dvh;
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(108,76,255,.12), transparent 24%),
+        radial-gradient(circle at 88% 82%, rgba(26,156,105,.09), transparent 25%),
+        #eef0f6;
+    }
+
+    .slides {
+      height: 100%;
+      transition: transform .72s cubic-bezier(.77, 0, .18, 1);
+      will-change: transform;
+    }
+
+    .slide {
+      height: 100dvh;
+      width: 100%;
+      padding: clamp(28px, 5vw, 80px) clamp(30px, 7vw, 118px);
+      position: relative;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .slide::after {
+      content: "";
+      position: absolute;
+      inset: clamp(16px, 2vw, 32px);
+      z-index: -2;
+      border-radius: 34px;
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .slide-inner { width: min(1240px, 100%); margin: auto; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: var(--purple);
+      font-family: "DM Sans", sans-serif;
+      font-weight: 800;
+      font-size: clamp(12px, 1.1vw, 15px);
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 28px; height: 3px; background: currentColor; border-radius: 9px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 22px;
+      max-width: 960px;
+      font-size: clamp(43px, 6.3vw, 92px);
+      line-height: 1.07;
+      letter-spacing: -.065em;
+      font-weight: 900;
+    }
+    h2 {
+      margin-bottom: 16px;
+      font-size: clamp(32px, 4vw, 58px);
+      line-height: 1.15;
+      letter-spacing: -.05em;
+      font-weight: 900;
+    }
+    h3 { margin-bottom: 8px; font-size: clamp(17px, 1.5vw, 22px); letter-spacing: -.025em; }
+    .lead {
+      max-width: 800px;
+      color: var(--muted);
+      font-size: clamp(17px, 1.8vw, 25px);
+      line-height: 1.65;
+    }
+    .accent { color: var(--purple); }
+    .green { color: var(--green); }
+    .orange { color: var(--orange); }
+
+    .slide-no {
+      position: absolute;
+      right: clamp(52px, 6vw, 100px);
+      top: clamp(42px, 5vw, 74px);
+      color: #a2a9b9;
+      font-family: "DM Sans", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .14em;
+    }
+
+    .cover .slide-inner { position: relative; }
+    .cover h1 span { position: relative; white-space: nowrap; }
+    .cover h1 span::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: .04em;
+      height: .16em;
+      background: var(--yellow);
+      border-radius: 9px;
+      z-index: -1;
+      transform: rotate(-1.5deg);
+    }
+    .cover-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+    .tag {
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      border-radius: 100px;
+      background: rgba(255,255,255,.8);
+      color: #545d72;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .hero-orbit {
+      position: absolute;
+      right: -1%; top: 50%;
+      width: clamp(250px, 28vw, 410px);
+      aspect-ratio: 1;
+      transform: translateY(-50%);
+      border: 2px dashed #d8d3ff;
+      border-radius: 50%;
+      z-index: -1;
+      animation: rotate 24s linear infinite;
+    }
+    .hero-core {
+      position: absolute;
+      inset: 25%;
+      display: grid;
+      place-items: center;
+      color: var(--white);
+      background: var(--purple);
+      border-radius: 34%;
+      box-shadow: 0 25px 60px rgba(108,76,255,.34);
+      transform: rotate(8deg);
+    }
+    .hero-core .icon { width: 50%; height: 50%; transform: rotate(-8deg); }
+    .orb {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      width: 58px; height: 58px;
+      border-radius: 18px;
+      color: var(--purple);
+      background: var(--white);
+      box-shadow: 0 12px 28px rgba(26,31,57,.14);
+    }
+    .orb .icon { width: 28px; height: 28px; }
+    .orb.one { top: -24px; left: calc(50% - 29px); }
+    .orb.two { bottom: 10%; right: -16px; }
+    .orb.three { bottom: 4%; left: 4%; }
+    @keyframes rotate { to { rotate: 360deg; } }
+    @keyframes counterRotate { to { rotate: -360deg; } }
+    .hero-orbit .orb { animation: counterRotate 24s linear infinite; }
+
+    .journey {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 42px;
+      position: relative;
+    }
+    .journey::before {
+      content: "";
+      position: absolute;
+      left: 9%; right: 9%; top: 38px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--purple), var(--green), var(--orange));
+      z-index: -1;
+    }
+    .journey-step { text-align: center; }
+    .journey-icon {
+      width: 76px; height: 76px;
+      margin: 0 auto 15px;
+      border: 8px solid #fff;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      color: var(--purple);
+      background: var(--purple-soft);
+      box-shadow: 0 10px 22px rgba(35,38,60,.1);
+    }
+    .journey-step:nth-child(3) .journey-icon { color: var(--green); background: var(--green-soft); }
+    .journey-step:nth-child(4) .journey-icon,
+    .journey-step:nth-child(5) .journey-icon { color: var(--orange); background: var(--orange-soft); }
+    .journey-icon .icon { width: 30px; height: 30px; }
+    .journey-step strong { display: block; font-size: clamp(15px, 1.45vw, 20px); }
+    .journey-step small { color: var(--muted); font-size: 13px; }
+
+    .card-grid { display: grid; gap: 16px; margin-top: 32px; }
+    .card-grid.six { grid-template-columns: repeat(6, 1fr); }
+    .card-grid.four { grid-template-columns: repeat(4, 1fr); }
+    .card {
+      min-height: 190px;
+      padding: 24px 22px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #fff;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 18px 30px rgba(30,35,60,.1); }
+    .card-icon {
+      width: 52px; height: 52px;
+      margin-bottom: 24px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      color: var(--purple);
+      background: var(--purple-soft);
+    }
+    .card:nth-child(2n) .card-icon { color: var(--green); background: var(--green-soft); }
+    .card:nth-child(3n) .card-icon { color: var(--orange); background: var(--orange-soft); }
+    .card-icon .icon { width: 27px; height: 27px; }
+    .card p { margin-bottom: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+    .setup-layout, .deploy-layout {
+      display: grid;
+      grid-template-columns: .82fr 1.18fr;
+      gap: clamp(30px, 6vw, 86px);
+      align-items: center;
+    }
+    .tool-stack { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .tool {
+      min-height: 150px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: 24px;
+      color: var(--ink);
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    .tool .icon { width: 38px; height: 38px; color: var(--purple); }
+    .tool:nth-child(2) .icon { color: var(--blue); }
+    .tool:nth-child(3) .icon { color: var(--green); }
+    .tool:nth-child(4) .icon { color: var(--orange); }
+    .tool:nth-child(5) .icon { color: var(--blue); }
+    .tool:nth-child(6) .icon { color: var(--green); }
+    .tool:nth-child(7) .icon { color: var(--blue); }
+    .tool.wide { grid-column: 1 / -1; min-height: 112px; flex-direction: row; align-items: center; }
+    .tool strong { font-family: "DM Sans", "Noto Sans KR", sans-serif; font-size: 19px; }
+
+    .domain-flow {
+      margin-top: 32px;
+      padding: 22px;
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 58px 1fr 58px 1fr;
+      grid-template-rows: auto auto;
+      align-items: center;
+      gap: 16px 8px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: #f8f9fc;
+    }
+    .domain-stage {
+      min-height: 230px;
+      padding: 22px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 2px solid #bfe9d7;
+      border-radius: 24px;
+      background: var(--green-soft);
+    }
+    .domain-stage.external {
+      border-color: #d7d0ff;
+      background: var(--purple-soft);
+    }
+    .domain-badge {
+      position: absolute;
+      left: 16px;
+      top: 14px;
+      padding: 6px 10px;
+      border-radius: 100px;
+      color: #126b47;
+      background: rgba(255,255,255,.86);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+    .external .domain-badge { color: var(--purple); }
+    .domain-icon {
+      width: 62px; height: 62px;
+      margin-bottom: 14px;
+      display: grid;
+      place-items: center;
+      border-radius: 19px;
+      color: var(--green);
+      background: #fff;
+      box-shadow: 0 10px 22px rgba(35,45,67,.09);
+    }
+    .external .domain-icon { color: var(--purple); }
+    .domain-icon .icon { width: 31px; height: 31px; }
+    .domain-stage h3 { margin-bottom: 5px; font-size: clamp(17px, 1.55vw, 22px); }
+    .domain-stage p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .domain-arrow {
+      color: #8d95a8;
+      text-align: center;
+      font-size: 27px;
+      font-weight: 900;
+    }
+    .security-line {
+      display: block;
+      margin-top: 7px;
+      color: #9aa1b1;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      writing-mode: vertical-rl;
+    }
+    .iteration-loop {
+      grid-column: 1 / -1;
+      min-height: 56px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      overflow: hidden;
+      border-radius: 17px;
+      color: #5542c7;
+      background: #ebe7ff;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .iteration-loop::before,
+    .iteration-loop::after { content: "↶"; font-size: 28px; line-height: 1; }
+    .iteration-loop::after { content: "↷"; }
+    .iteration-loop span { text-align: center; }
+
+    .pipeline {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: stretch;
+      gap: 24px;
+    }
+    .pipe-step {
+      min-width: 0;
+      padding: 22px 14px;
+      text-align: center;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+      position: relative;
+    }
+    .pipe-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -21px; top: 50%;
+      translate: 0 -50%;
+      color: #a8aec0;
+      font-size: 25px;
+      font-weight: 900;
+    }
+    .pipe-step .card-icon { margin: 0 auto 15px; }
+    .pipe-step strong { display: block; font-size: 16px; }
+    .pipe-step small { display: block; margin-top: 5px; color: var(--muted); }
+    .file-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 7px 11px;
+      color: #13764e;
+      background: var(--green-soft);
+      border-radius: 9px;
+      font-family: "DM Sans", monospace;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .analogy {
+      margin-top: 26px;
+      padding: 17px 22px;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      color: #5a4660;
+      background: #fff7db;
+      border-radius: 16px;
+      font-weight: 700;
+    }
+    .analogy .icon { width: 24px; height: 24px; color: #bd8110; flex: 0 0 auto; }
+
+    .code-window {
+      overflow: hidden;
+      border-radius: 25px;
+      color: #e7e9f3;
+      background: #202438;
+      box-shadow: 0 22px 50px rgba(25,28,48,.23);
+    }
+    .window-bar { display: flex; gap: 7px; padding: 16px 18px; background: #181b2b; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ff6b63; }
+    .dot:nth-child(2) { background: #ffbf3f; }
+    .dot:nth-child(3) { background: #34cb65; }
+    .code-body { padding: 28px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(12px, 1.2vw, 16px); line-height: 1.9; }
+    .c-purple { color: #b9a8ff; }
+    .c-green { color: #7bddb7; }
+    .c-orange { color: #ffad7d; }
+    .cursor { display: inline-block; width: 8px; height: 1.2em; vertical-align: middle; background: #fff; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .frontend-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 18px;
+      margin-top: 40px;
+    }
+    .big-stage {
+      min-height: 245px;
+      padding: 30px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border-radius: 28px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    .big-stage .stage-icon {
+      width: 78px; height: 78px;
+      margin-bottom: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      color: var(--purple);
+      background: var(--purple-soft);
+    }
+    .big-stage:nth-of-type(3) .stage-icon { color: var(--green); background: var(--green-soft); }
+    .big-stage:nth-of-type(5) .stage-icon { color: var(--orange); background: var(--orange-soft); }
+    .stage-icon .icon { width: 38px; height: 38px; }
+    .big-stage p { margin: 5px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .flow-arrow { color: #afb5c5; font-size: 32px; font-weight: 900; }
+
+    .transfer {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-top: 38px;
+    }
+    .zone {
+      min-height: 250px;
+      padding: 25px;
+      border-radius: 28px;
+      background: var(--purple-soft);
+      border: 1px solid #dcd5ff;
+      text-align: center;
+    }
+    .zone.office { background: var(--green-soft); border-color: #c8eddc; }
+    .zone.repo { background: #fff; border-color: var(--line); }
+    .zone-icon {
+      width: 70px; height: 70px;
+      margin: 4px auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      color: var(--purple);
+      background: #fff;
+    }
+    .office .zone-icon { color: var(--green); }
+    .repo .zone-icon { color: var(--ink); background: #f1f2f6; }
+    .zone-icon .icon { width: 36px; height: 36px; }
+    .zone p { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .action-arrow { min-width: 80px; color: var(--purple); text-align: center; }
+    .action-arrow .icon { width: 28px; height: 28px; margin: auto; }
+    .action-arrow strong { display: block; margin-top: 5px; font-family: "DM Sans", sans-serif; font-size: 12px; }
+
+    .deploy-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .deploy-card {
+      min-height: 260px;
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 26px;
+      color: #fff;
+      background: #22263c;
+    }
+    .deploy-card:last-child { background: var(--purple); }
+    .deploy-card::after {
+      content: "";
+      position: absolute;
+      width: 160px; height: 160px;
+      right: -55px; bottom: -55px;
+      border: 28px solid rgba(255,255,255,.09);
+      border-radius: 50%;
+    }
+    .deploy-card .icon { width: 44px; height: 44px; margin-bottom: 45px; }
+    .deploy-card strong { display: block; margin-bottom: 7px; font-size: 23px; }
+    .deploy-card code { color: rgba(255,255,255,.7); font-size: 13px; }
+    .result-pill {
+      margin-top: 24px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-radius: 18px;
+      color: #146843;
+      background: var(--green-soft);
+      font-weight: 800;
+    }
+    .result-pill .icon { width: 24px; height: 24px; }
+
+    /* 카드 클릭 시 열리는 대표 이미지 */
+    .visual-trigger {
+      position: relative;
+      cursor: pointer;
+      outline: none;
+      transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    }
+    .visual-trigger::before {
+      content: "이미지 보기 ↗";
+      position: absolute;
+      right: 14px;
+      top: 12px;
+      z-index: 2;
+      padding: 5px 8px;
+      border-radius: 100px;
+      color: var(--purple);
+      background: rgba(238,234,255,.92);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events: none;
+    }
+    .visual-trigger:hover,
+    .visual-trigger:focus-visible {
+      transform: translateY(-6px);
+      border-color: #c9c0ff;
+      box-shadow: 0 18px 34px rgba(41, 34, 82, .14);
+    }
+    .visual-trigger:hover::before,
+    .visual-trigger:focus-visible::before { opacity: 1; transform: translateY(0); }
+    .deploy-card.visual-trigger:hover,
+    .deploy-card.visual-trigger:focus-visible { border-color: transparent; box-shadow: 0 20px 38px rgba(28,30,52,.25); }
+    .deploy-card.visual-trigger::before { color: #fff; background: rgba(255,255,255,.16); }
+
+    .visual-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: clamp(18px, 4vw, 56px);
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity .28s ease, visibility .28s ease;
+    }
+    .visual-modal.open { visibility: visible; opacity: 1; }
+    .visual-backdrop {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      background: rgba(20, 23, 40, .62);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+    .visual-panel {
+      width: min(960px, 100%);
+      max-height: min(680px, calc(100dvh - 40px));
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: .82fr 1.18fr;
+      gap: clamp(24px, 4vw, 54px);
+      align-items: center;
+      padding: clamp(28px, 4.2vw, 58px);
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,.85);
+      border-radius: 32px;
+      background: #fff;
+      box-shadow: 0 35px 90px rgba(16,18,31,.35);
+      transform: translateY(18px) scale(.97);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1);
+    }
+    .visual-modal.open .visual-panel { transform: translateY(0) scale(1); }
+    .visual-close {
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      z-index: 4;
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--ink);
+      background: rgba(255,255,255,.88);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .visual-copy { min-width: 0; }
+    .visual-copy .eyebrow { margin-bottom: 14px; }
+    .visual-copy h2 { margin-bottom: 16px; font-size: clamp(30px, 4vw, 52px); word-break: keep-all; }
+    .visual-copy p { margin: 0; color: var(--muted); font-size: clamp(15px, 1.5vw, 19px); line-height: 1.7; }
+    .visual-tip { display: block; margin-top: 22px; color: #9aa1b2; font-size: 12px; }
+
+    .visual-art {
+      --art-color: var(--purple);
+      min-height: 390px;
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border-radius: 28px;
+      color: var(--purple);
+      background: linear-gradient(145deg, #f1edff, #e4ddff);
+      isolation: isolate;
+    }
+    .visual-art.green { --art-color: var(--green); color: var(--green); background: linear-gradient(145deg, #e7faf2, #cef2e2); }
+    .visual-art.orange { --art-color: var(--orange); color: var(--orange); background: linear-gradient(145deg, #fff2e9, #ffe1d1); }
+    .visual-art.dark { --art-color: #fff; color: #fff; background: linear-gradient(145deg, #282d47, #171a2b); }
+    .visual-art::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -3;
+      opacity: .42;
+      background-image: linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom right, #000, transparent 72%);
+    }
+    .art-ring {
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border: 2px dashed currentColor;
+      border-radius: 50%;
+      opacity: .22;
+      animation: rotate 22s linear infinite;
+    }
+    .art-main {
+      width: 142px;
+      height: 142px;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      border: 12px solid rgba(255,255,255,.45);
+      border-radius: 42px;
+      color: #fff;
+      background: var(--art-color);
+      box-shadow: 0 25px 50px rgba(35,30,68,.2);
+      transform: rotate(-5deg);
+    }
+    .art-main .icon { width: 68px; height: 68px; transform: rotate(5deg); }
+    .visual-art.dark .art-main { color: #20243a; background: #fff; }
+    .art-chip {
+      position: absolute;
+      z-index: 2;
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,.92);
+      border-radius: 13px;
+      color: var(--ink);
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 12px 24px rgba(34,31,62,.13);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      animation: float 3.4s ease-in-out infinite;
+    }
+    .art-chip.one { left: 7%; top: 17%; }
+    .art-chip.two { right: 6%; top: 28%; animation-delay: -.8s; }
+    .art-chip.three { left: 14%; bottom: 14%; animation-delay: -1.7s; }
+    .art-chip.four { right: 11%; bottom: 11%; animation-delay: -2.4s; }
+    .art-node {
+      position: absolute;
+      width: 14px; height: 14px;
+      border: 4px solid #fff;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 5px 12px rgba(30,32,50,.16);
+    }
+    .art-node.n1 { left: 22%; top: 50%; }
+    .art-node.n2 { right: 22%; top: 16%; }
+    .art-node.n3 { right: 18%; bottom: 24%; }
+    @keyframes float { 50% { transform: translateY(-8px); } }
+    body.modal-open { overflow: hidden; }
+
+    .summary-map {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 34px;
+    }
+    .summary-item {
+      padding: 24px 18px;
+      border-radius: 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    .summary-item b { display: block; margin-bottom: 10px; color: var(--purple); font-family: "DM Sans", sans-serif; font-size: 13px; letter-spacing: .08em; }
+    .summary-item strong { font-size: 18px; }
+    .takeaway {
+      margin-top: 20px;
+      padding: 25px 28px;
+      border-radius: 22px;
+      color: white;
+      background: linear-gradient(120deg, var(--purple), #8759ed);
+      font-size: clamp(18px, 2vw, 26px);
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .nav {
+      position: fixed;
+      right: clamp(21px, 2.7vw, 45px);
+      top: 50%;
+      translate: 0 -50%;
+      z-index: 20;
+      display: grid;
+      gap: 10px;
+    }
+    .nav-dot {
+      width: 10px; height: 10px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: #b9becb;
+      cursor: pointer;
+      transition: height .25s ease, border-radius .25s ease, background .25s ease;
+    }
+    .nav-dot.active { height: 28px; border-radius: 9px; background: var(--purple); }
+    .controls {
+      position: fixed;
+      right: clamp(49px, 6vw, 98px);
+      bottom: clamp(40px, 5vw, 70px);
+      z-index: 20;
+      display: flex;
+      gap: 9px;
+    }
+    .control {
+      width: 46px; height: 46px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--ink);
+      background: rgba(255,255,255,.9);
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(30,35,60,.1);
+    }
+    .control:hover { color: #fff; background: var(--purple); border-color: var(--purple); }
+    .control .icon { width: 20px; height: 20px; }
+    .counter {
+      position: fixed;
+      left: clamp(52px, 6vw, 100px);
+      bottom: clamp(45px, 5vw, 74px);
+      z-index: 20;
+      color: #8d94a7;
+      font-family: "DM Sans", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .hint {
+      position: fixed;
+      left: 50%; bottom: clamp(42px, 4.6vw, 68px);
+      translate: -50% 0;
+      z-index: 20;
+      color: #9299aa;
+      font-size: 12px;
+    }
+
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .65s ease, transform .65s ease; }
+    .active-slide .reveal { opacity: 1; transform: translateY(0); }
+    .active-slide .d1 { transition-delay: .08s; }
+    .active-slide .d2 { transition-delay: .18s; }
+    .active-slide .d3 { transition-delay: .28s; }
+    .active-slide .d4 { transition-delay: .38s; }
+    .active-slide .d5 { transition-delay: .48s; }
+
+    .icon {
+      width: 1em; height: 1em;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .deck, .slides { height: auto; overflow: visible; transform: none !important; }
+      .slide { min-height: 100svh; height: auto; padding: 70px 42px; }
+      .hero-orbit { opacity: .22; right: -12%; }
+      .cover h1 { max-width: 700px; }
+      .journey { grid-template-columns: repeat(3, 1fr); row-gap: 24px; }
+      .journey::before { display: none; }
+      .card-grid.six { grid-template-columns: repeat(3, 1fr); }
+      .card-grid.four { grid-template-columns: repeat(2, 1fr); }
+      .pipeline { grid-template-columns: repeat(3, 1fr); }
+      .pipe-step::after { display: none; }
+      .setup-layout, .deploy-layout { grid-template-columns: 1fr; }
+      .nav, .controls, .counter, .hint { display: none; }
+    }
+
+    @media (max-width: 620px) {
+      .slide { padding: 65px 28px; }
+      .slide::after { inset: 10px; border-radius: 24px; }
+      .slide-no { right: 30px; top: 28px; }
+      .journey, .card-grid.six, .card-grid.four, .pipeline, .summary-map { grid-template-columns: 1fr 1fr; }
+      .tool-stack { grid-template-columns: 1fr 1fr; }
+      .card { min-height: 165px; }
+      .frontend-flow, .transfer { grid-template-columns: 1fr; }
+      .domain-flow { grid-template-columns: 1fr; grid-template-rows: auto; padding: 16px; }
+      .domain-stage, .iteration-loop { grid-column: 1; }
+      .domain-stage { min-height: 190px; }
+      .domain-arrow { rotate: 90deg; }
+      .security-line { display: none; }
+      .flow-arrow { rotate: 90deg; text-align: center; }
+      .action-arrow { rotate: 90deg; }
+      .deploy-choice { grid-template-columns: 1fr; }
+      .hero-orbit { display: none; }
+      .hint { display: none; }
+      .visual-panel { grid-template-columns: 1fr; padding: 28px 20px 22px; border-radius: 24px; }
+      .visual-copy { padding: 8px 8px 0; }
+      .visual-art { min-height: 280px; }
+      .art-main { width: 110px; height: 110px; border-radius: 34px; }
+      .art-main .icon { width: 52px; height: 52px; }
+      .art-ring { width: 220px; height: 220px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 모든 아이콘을 문서 안에 포함해 오프라인에서도 표시됩니다. -->
+  <svg class="sr-only" aria-hidden="true">
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-3.9c.04-1-.35-1.76-1-2.1 3.3-.37 6.8-1.62 6.8-7.4a5.8 5.8 0 0 0-1.55-4.03A5.4 5.4 0 0 0 19.1.6S17.9.2 15 2.15a13.7 13.7 0 0 0-6 0C6.1.2 4.9.6 4.9.6a5.4 5.4 0 0 0-.15 3.97A5.8 5.8 0 0 0 3.2 8.6c0 5.77 3.5 7.02 6.82 7.4-.43.38-.82 1.05-.96 2.03-.86.38-3.02 1.05-4.36-1.25-.82-1.4-2.1-1.5-2.1-1.5-1.36-.02-.1.85-.1.85.9.42 1.54 2.04 1.54 2.04.8 2.43 4.98 1.61 4.98 1.61V22"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3m6 0h4"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 9-3 3 3 3m8-6 3 3-3 3m-2-9-4 12"/></symbol>
+    <symbol id="i-python" viewBox="0 0 24 24"><path d="M12 2C8 2 7 4 7 7v2h5v1H5c-2 0-3 1.5-3 4s1 4 3 4h2v-3c0-2 1-3 3-3h4c2 0 3-1 3-3V6c0-2.5-2-4-5-4Z"/><path d="M12 22c4 0 5-2 5-5v-2h-5v-1h7c2 0 3-1.5 3-4s-1-4-3-4h-2v3c0 2-1 3-3 3h-4c-2 0-3 1-3 3v3c0 2.5 2 4 5 4Z"/><path d="M10 5h.01M14 19h.01"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15ZM5 3l.6 1.4L7 5l-1.4.6L5 7l-.6-1.4L3 5l1.4-.6L5 3Z"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 9 4.5-9 4.5-9-4.5L12 3Z"/><path d="m3 7.5 9 4.5 9-4.5M3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5"/></symbol>
+    <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01M11 6.5h7M11 17.5h7"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/></symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24"><path d="M9.5 4.5A3 3 0 0 0 4 6v1a3 3 0 0 0-1 5.2A3 3 0 0 0 5 17v.5A3.5 3.5 0 0 0 11.5 19V5.5a2.5 2.5 0 0 0-2-1ZM14.5 4.5A3 3 0 0 1 20 6v1a3 3 0 0 1 1 5.2A3 3 0 0 1 19 17v.5a3.5 3.5 0 0 1-6.5 1.5V5.5a2.5 2.5 0 0 1 2-1Z"/><path d="M8 9a3 3 0 0 0 3.5 3M16 9a3 3 0 0 1-3.5 3M7 16a3 3 0 0 1 4.5 1M17 16a3 3 0 0 0-4.5 1"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 2h8l4 4v16H6V2Z"/><path d="M14 2v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-linux" viewBox="0 0 24 24"><path d="M8 11c0-4 1-8 4-8s4 4 4 8c2 2 3 4 2 6-1 3-4 4-6 4s-5-1-6-4c-1-2 0-4 2-6Z"/><path d="M9 10h.01M15 10h.01M10 13c1 .8 3 .8 4 0M7 19l-2 2M17 19l2 2"/></symbol>
+    <symbol id="i-editor" viewBox="0 0 24 24"><path d="m17 3 4 4-11 11-5 1 1-5L17 3Z"/><path d="m15 5 4 4M4 22h16"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v11h14V10M9 21v-7h6v7"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/></symbol>
+    <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 22V4h11v18M15 9h5v13M2 22h20M8 8h3M8 12h3M8 16h3M18 13h.01M18 17h.01"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M5 14v6h14v-6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M5 19v2h14v-2"/></symbol>
+    <symbol id="i-container" viewBox="0 0 24 24"><path d="M3 6h18v12H3V6Z"/><path d="M7 6v12M11 6v12M15 6v12M19 6v12"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4V8Z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M8 14a6 6 0 1 1 8 0c-1 .7-1 2-1 2H9s0-1.3-1-2Z"/></symbol>
+    <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  </svg>
+
+  <main class="deck" aria-label="웹서비스 개발 과정 발표 자료">
+    <div class="slides" id="slides">
+      <section class="slide cover active-slide" aria-labelledby="slide-1-title">
+        <div class="slide-no">INTRO</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">WEB SERVICE 101</div>
+          <h1 id="slide-1-title" class="reveal d1">웹서비스는<br><span>어떻게 만들어질까?</span></h1>
+          <p class="lead reveal d2">비개발자를 위한 웹서비스 개발 프로세스 개요</p>
+          <div class="cover-tags reveal d3">
+            <span class="tag">사전 지식</span><span class="tag">백엔드</span><span class="tag">프론트엔드</span><span class="tag">GitHub</span><span class="tag">배포</span>
+          </div>
+          <div class="hero-orbit" aria-hidden="true">
+            <div class="hero-core"><svg class="icon"><use href="#i-globe"/></svg></div>
+            <div class="orb one"><svg class="icon"><use href="#i-code"/></svg></div>
+            <div class="orb two"><svg class="icon"><use href="#i-database"/></svg></div>
+            <div class="orb three"><svg class="icon"><use href="#i-server"/></svg></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-2-title">
+        <div class="slide-no">01 / 전체 여정</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">THE BIG PICTURE</div>
+          <h2 id="slide-2-title" class="reveal d1">먼저, <span class="accent">큰 그림</span>부터</h2>
+          <p class="lead reveal d2">웹서비스 개발은 환경 구성, 데이터 처리, UI 구현, 서비스 배포 단계로 구성됩니다.</p>
+          <div class="journey">
+            <div class="journey-step reveal d1"><div class="journey-icon"><svg class="icon"><use href="#i-light"/></svg></div><strong>사전 지식</strong><small>기본 도구 및 용어</small></div>
+            <div class="journey-step reveal d2"><div class="journey-icon"><svg class="icon"><use href="#i-box"/></svg></div><strong>준비물</strong><small>개발 환경 구성</small></div>
+            <div class="journey-step reveal d3"><div class="journey-icon"><svg class="icon"><use href="#i-server"/></svg></div><strong>백엔드</strong><small>데이터 처리</small></div>
+            <div class="journey-step reveal d4"><div class="journey-icon"><svg class="icon"><use href="#i-layout"/></svg></div><strong>프론트엔드</strong><small>사용자 화면 구현</small></div>
+            <div class="journey-step reveal d5"><div class="journey-icon"><svg class="icon"><use href="#i-play"/></svg></div><strong>배포</strong><small>서비스 운영 환경 반영</small></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-3-title">
+        <div class="slide-no">02 / 사전 지식</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">BEFORE WE START</div>
+          <h2 id="slide-3-title" class="reveal d1">사전에 알아야 할 <span class="accent">기본 지식</span></h2>
+          <div class="card-grid six">
+            <article class="card visual-trigger reveal d1" data-visual="github" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-github"/></svg></div><h3>GitHub</h3><p>소스 코드 저장 및<br>버전 관리 플랫폼</p></article>
+            <article class="card visual-trigger reveal d2" data-visual="terminal" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-terminal"/></svg></div><h3>터미널</h3><p>명령어 기반의<br>시스템 제어 도구</p></article>
+            <article class="card visual-trigger reveal d3" data-visual="vscode" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-editor"/></svg></div><h3>VS Code</h3><p>코드 작성 및<br>프로젝트 관리 도구</p></article>
+            <article class="card visual-trigger reveal d4" data-visual="python" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-python"/></svg></div><h3>Python</h3><p>데이터 처리 및<br>자동화 프로그래밍 언어</p></article>
+            <article class="card visual-trigger reveal d5" data-visual="codex" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-spark"/></svg></div><h3>Codex</h3><p>AI 기반 코드<br>생성·수정 도구</p></article>
+            <article class="card visual-trigger reveal d5" data-visual="sql" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-database"/></svg></div><h3>SQL</h3><p>관계형 데이터<br>조회·가공 언어</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-4-title">
+        <div class="slide-no">03 / 준비물</div>
+        <div class="slide-inner setup-layout">
+          <div>
+            <div class="eyebrow reveal">TOOL KIT</div>
+            <h2 id="slide-4-title" class="reveal d1"><span class="accent">준비물</span></h2>
+            <p class="lead reveal d2">개발 도구와 실행 환경을<br>사전에 구성합니다.</p>
+            <div class="analogy reveal d3"><svg class="icon"><use href="#i-light"/></svg><span>사내 보안 정책 및 접근 권한 사전 확인</span></div>
+          </div>
+          <div class="tool-stack">
+            <div class="tool reveal d1"><svg class="icon"><use href="#i-github"/></svg><strong>GitHub 계정</strong></div>
+            <div class="tool reveal d2"><svg class="icon"><use href="#i-editor"/></svg><strong>VS Code</strong></div>
+            <div class="tool reveal d3"><svg class="icon"><use href="#i-spark"/></svg><strong>Codex</strong></div>
+            <div class="tool reveal d3"><svg class="icon"><use href="#i-spark"/></svg><strong>ChatGPT</strong></div>
+            <div class="tool reveal d4"><svg class="icon"><use href="#i-linux"/></svg><strong>Ubuntu</strong></div>
+            <div class="tool reveal d4"><svg class="icon"><use href="#i-database"/></svg><strong>DB · MySQL / MariaDB 등</strong></div>
+            <div class="tool wide reveal d5"><svg class="icon"><use href="#i-server"/></svg><strong>사내 서버 · VM 또는 C-DEP</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-flow-title">
+        <div class="slide-no">04 / 개발 흐름</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">ITERATIVE DEVELOPMENT FLOW</div>
+          <h2 id="slide-flow-title" class="reveal d1">사내·사외 환경을 연결하는 <span class="accent">반복 개발 구조</span></h2>
+          <p class="lead reveal d2">각 단계는 일회성으로 종료되지 않으며, 검증 결과와 요구사항을 반영해 지속적으로 순환합니다.</p>
+          <div class="domain-flow reveal d3">
+            <article class="domain-stage">
+              <span class="domain-badge">사내 영역 · INTERNAL</span>
+              <div class="domain-icon"><svg class="icon"><use href="#i-server"/></svg></div>
+              <h3>백엔드 개발</h3>
+              <p>사내 PC · VM/C-DEP<br>데이터 수집·처리·저장</p>
+            </article>
+            <div class="domain-arrow" aria-hidden="true">→<span class="security-line">보안 경계</span></div>
+            <article class="domain-stage external">
+              <span class="domain-badge">사외 영역 · EXTERNAL</span>
+              <div class="domain-icon"><svg class="icon"><use href="#i-home"/></svg></div>
+              <h3>프론트엔드 개발</h3>
+              <p>집 PC · Ubuntu<br>데이터 연결 및 UI 구현</p>
+            </article>
+            <div class="domain-arrow" aria-hidden="true">→<span class="security-line">보안 경계</span></div>
+            <article class="domain-stage">
+              <span class="domain-badge">사내 영역 · INTERNAL</span>
+              <div class="domain-icon"><svg class="icon"><use href="#i-building"/></svg></div>
+              <h3>배포 및 운영</h3>
+              <p>사내 PC · 사내 서버<br>코드 이관·실행·검증</p>
+            </article>
+            <div class="iteration-loop"><span>운영 결과·오류·추가 요구사항 반영&nbsp; · &nbsp;개발 → 검증 → 배포 사이클 반복</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-5-title">
+        <div class="slide-no">05 / 백엔드</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">BACKEND · DATA PROCESSING</div>
+          <h2 id="slide-5-title" class="reveal d1">사내 서버 기반 <span class="green">데이터 처리</span></h2>
+          <p class="lead reveal d2">Python을 활용해 원천 데이터를 수집·정제·가공하고 서비스용 데이터셋을 생성합니다.</p>
+          <div class="pipeline">
+            <div class="pipe-step visual-trigger reveal d1" data-visual="server-setup" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-server"/></svg></div><strong>실행 환경 구성</strong><small>VM / C-DEP</small></div>
+            <div class="pipe-step visual-trigger reveal d2" data-visual="collect" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-database"/></svg></div><strong>데이터 수집</strong><small>원천 데이터 확보</small></div>
+            <div class="pipe-step visual-trigger reveal d3" data-visual="preprocess" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-filter"/></svg></div><strong>전처리·가공</strong><small>결측값·형식 정제</small></div>
+            <div class="pipe-step visual-trigger reveal d4" data-visual="algorithm" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-brain"/></svg></div><strong>알고리즘 수행</strong><small>분석 로직 적용</small></div>
+            <div class="pipe-step visual-trigger reveal d5" data-visual="parquet" role="button" tabindex="0" aria-haspopup="dialog"><div class="card-icon"><svg class="icon"><use href="#i-file"/></svg></div><strong>파일 저장</strong><span class="file-chip">data.parquet</span></div>
+          </div>
+          <div class="analogy reveal d5"><svg class="icon"><use href="#i-light"/></svg><span>Parquet: 압축률과 분석 성능에 최적화된 열 지향 데이터 형식</span></div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-6-title">
+        <div class="slide-no">06 / 프론트엔드</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">FRONTEND · USER INTERFACE</div>
+          <h2 id="slide-6-title" class="reveal d1">데이터 기반 <span class="orange">사용자 인터페이스 구현</span></h2>
+          <div class="frontend-flow">
+            <div class="big-stage visual-trigger reveal d1" data-visual="ubuntu" role="button" tabindex="0" aria-haspopup="dialog"><div class="stage-icon"><svg class="icon"><use href="#i-linux"/></svg></div><h3>로컬 개발 환경 구성</h3><p>집 PC<br>Ubuntu 환경 설정</p></div>
+            <div class="flow-arrow reveal d2">→</div>
+            <div class="big-stage visual-trigger reveal d2" data-visual="vscode-codex" role="button" tabindex="0" aria-haspopup="dialog"><div class="stage-icon"><svg class="icon"><use href="#i-spark"/></svg></div><h3>AI 지원 코드 개발</h3><p>VS Code + Codex<br>기능 구현 및 검증</p></div>
+            <div class="flow-arrow reveal d3">→</div>
+            <div class="big-stage visual-trigger reveal d3" data-visual="webpage" role="button" tabindex="0" aria-haspopup="dialog"><div class="stage-icon"><svg class="icon"><use href="#i-layout"/></svg></div><h3>웹 화면 구현</h3><p>실제 데이터 연동<br>UI 코드 작성</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-7-title">
+        <div class="slide-no">07 / Codex 활용</div>
+        <div class="slide-inner setup-layout">
+          <div>
+            <div class="eyebrow reveal">AI PAIR PROGRAMMING</div>
+            <h2 id="slide-7-title" class="reveal d1">요구사항을 정의하고<br><span class="accent">Codex로 구현</span></h2>
+            <p class="lead reveal d2">기능 목표, 데이터 구조, 기대 결과를 명시하고 실행 결과를 기반으로 코드를 개선합니다.</p>
+            <div class="analogy reveal d3"><svg class="icon"><use href="#i-light"/></svg><span>요구사항 정의 → 코드 생성 → 실행 검증 → 개선</span></div>
+          </div>
+          <div class="code-window reveal d2" aria-label="Codex 대화 예시">
+            <div class="window-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+            <div class="code-body"><span class="c-purple">요청 ›</span> Parquet 파일을 로드하여<br>&nbsp;&nbsp;&nbsp;&nbsp;부서별 지표를 시각화하는<br>&nbsp;&nbsp;&nbsp;&nbsp;웹페이지를 구현해줘.<br><br><span class="c-green">Codex ›</span> 데이터 로딩과 UI를 구현하고<br>&nbsp;&nbsp;&nbsp;&nbsp;실행 결과를 검증하겠습니다. <span class="cursor"></span><br><br><span class="c-orange">✓</span> 데이터 로딩 &nbsp;<span class="c-orange">✓</span> UI 구현 &nbsp;<span class="c-orange">✓</span> 테스트</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-8-title">
+        <div class="slide-no">08 / 코드 이관</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">CODE TRANSFER</div>
+          <h2 id="slide-8-title" class="reveal d1">사외 개발 코드를 <span class="accent">사내 환경으로 이관</span></h2>
+          <p class="lead reveal d2">사외 GitHub 저장소를 중간 경로로 활용하여 소스 코드를 사내 개발 환경으로 이전합니다.</p>
+          <div class="transfer">
+            <div class="zone reveal d1"><div class="zone-icon"><svg class="icon"><use href="#i-home"/></svg></div><h3>집 PC · 사외 영역</h3><p>프론트엔드 코드 작성<br>사외 GitHub에 <b>push</b></p></div>
+            <div class="action-arrow reveal d2"><svg class="icon"><use href="#i-upload"/></svg><strong>PUSH</strong></div>
+            <div class="zone repo reveal d2"><div class="zone-icon"><svg class="icon"><use href="#i-github"/></svg></div><h3>사외 GitHub</h3><p>소스 코드 버전 관리<br>중간 이관 저장소</p></div>
+            <div class="action-arrow reveal d3"><svg class="icon"><use href="#i-download"/></svg><strong>PULL</strong></div>
+            <div class="zone office reveal d3"><div class="zone-icon"><svg class="icon"><use href="#i-building"/></svg></div><h3>사내 PC · 사내 영역</h3><p>VS Code로 <b>clone</b><br>검증 후 사내 GitHub에 <b>push</b></p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-9-title">
+        <div class="slide-no">09 / 배포</div>
+        <div class="slide-inner deploy-layout">
+          <div>
+            <div class="eyebrow reveal">DEPLOY · GO LIVE</div>
+            <h2 id="slide-9-title" class="reveal d1">사내 운영 환경에<br><span class="green">웹서비스 배포</span></h2>
+            <p class="lead reveal d2">사내 서버 또는 C-DEP에서 직접 실행하거나 Docker 컨테이너로 구동합니다.</p>
+            <div class="result-pill reveal d3"><svg class="icon"><use href="#i-check"/></svg><span>내부 접속 주소를 통한 서비스 이용</span></div>
+          </div>
+          <div class="deploy-choice">
+            <div class="deploy-card visual-trigger reveal d2" data-visual="direct-run" role="button" tabindex="0" aria-haspopup="dialog"><svg class="icon"><use href="#i-terminal"/></svg><strong>직접 실행</strong><code>node server.mjs</code></div>
+            <div class="deploy-card visual-trigger reveal d3" data-visual="docker" role="button" tabindex="0" aria-haspopup="dialog"><svg class="icon"><use href="#i-container"/></svg><strong>Docker 실행</strong><code>실행 환경을 컨테이너로 표준화</code></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" aria-labelledby="slide-10-title">
+        <div class="slide-no">WRAP UP</div>
+        <div class="slide-inner">
+          <div class="eyebrow reveal">ONE MORE TIME</div>
+          <h2 id="slide-10-title" class="reveal d1">웹서비스 개발 프로세스 요약</h2>
+          <div class="summary-map">
+            <div class="summary-item reveal d1"><b>01 · SETUP</b><strong>개발 환경 구성</strong></div>
+            <div class="summary-item reveal d2"><b>02 · DATA</b><strong>데이터 처리</strong></div>
+            <div class="summary-item reveal d3"><b>03 · UI</b><strong>사용자 화면 구현</strong></div>
+            <div class="summary-item reveal d4"><b>04 · DEPLOY</b><strong>운영 환경 배포</strong></div>
+          </div>
+          <div class="takeaway reveal d5">웹서비스 개발은 데이터 처리 결과를 사용자 인터페이스와 연결하고 운영 환경에 제공하는 과정입니다.</div>
+        </div>
+      </section>
+    </div>
+
+    <nav class="nav" id="nav" aria-label="슬라이드 바로가기"></nav>
+    <div class="controls" aria-label="슬라이드 이동">
+      <button class="control" id="prev" type="button" aria-label="이전 슬라이드"><svg class="icon"><use href="#i-chevron-up"/></svg></button>
+      <button class="control" id="next" type="button" aria-label="다음 슬라이드"><svg class="icon"><use href="#i-chevron-down"/></svg></button>
+    </div>
+    <div class="counter" id="counter" aria-live="polite">01 / 11</div>
+    <div class="hint">↑ ↓ 또는 Space로 이동 · F 키로 전체 화면</div>
+  </main>
+
+  <div class="visual-modal" id="visual-modal" role="dialog" aria-modal="true" aria-labelledby="visual-title" aria-describedby="visual-description" aria-hidden="true">
+    <button class="visual-backdrop" type="button" data-modal-close aria-label="대표 이미지 닫기"></button>
+    <div class="visual-panel">
+      <button class="visual-close" type="button" data-modal-close aria-label="닫기">×</button>
+      <div class="visual-copy">
+        <div class="eyebrow" id="visual-kicker">CATEGORY IMAGE</div>
+        <h2 id="visual-title">대표 이미지</h2>
+        <p id="visual-description"></p>
+        <span class="visual-tip">Esc 또는 바깥 영역을 누르면 닫힙니다</span>
+      </div>
+      <div class="visual-art" id="visual-art" role="img" aria-label="">
+        <div class="art-ring"></div>
+        <span class="art-node n1"></span><span class="art-node n2"></span><span class="art-node n3"></span>
+        <div class="art-main"><svg class="icon"><use id="visual-icon" href="#i-globe"/></svg></div>
+        <div id="visual-chips"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const slidesWrap = document.getElementById('slides');
+      const slides = [...document.querySelectorAll('.slide')];
+      const nav = document.getElementById('nav');
+      const counter = document.getElementById('counter');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let current = 0;
+      let wheelLocked = false;
+      let touchStartY = 0;
+      let lastTrigger = null;
+
+      const visualModal = document.getElementById('visual-modal');
+      const visualArt = document.getElementById('visual-art');
+      const visualIcon = document.getElementById('visual-icon');
+      const visualChips = document.getElementById('visual-chips');
+      const visualTitle = document.getElementById('visual-title');
+      const visualDescription = document.getElementById('visual-description');
+      const visualKicker = document.getElementById('visual-kicker');
+      const visualData = {
+        github: {
+          kicker: 'VERSION CONTROL', title: 'GitHub', icon: 'github', tone: '',
+          description: '소스 코드의 변경 이력을 관리하고 여러 환경에서 동일한 프로젝트를 협업할 수 있는 버전 관리 플랫폼입니다.',
+          chips: ['main', 'branch', 'commit', 'push ↗']
+        },
+        terminal: {
+          kicker: 'COMMAND LINE', title: '터미널', icon: 'terminal', tone: 'dark',
+          description: '명령어를 입력하여 파일 시스템을 관리하고 프로그램을 실행하는 명령줄 인터페이스입니다.',
+          chips: ['$ cd project', '$ npm start', 'server ready', 'localhost:3000']
+        },
+        vscode: {
+          kicker: 'CODE EDITOR', title: 'VS Code', icon: 'editor', tone: '',
+          description: '소스 코드 작성, 파일 관리, 디버깅 및 확장 기능을 제공하는 통합 코드 편집기입니다.',
+          chips: ['index.html', 'style.css', 'server.mjs', '● live']
+        },
+        python: {
+          kicker: 'PROGRAMMING LANGUAGE', title: 'Python', icon: 'python', tone: 'green',
+          description: '복잡한 데이터 수집·정리·분석 작업을 비교적 읽기 쉬운 코드로 자동화하는 프로그래밍 언어입니다.',
+          chips: ['pandas', 'DataFrame', 'read_data()', 'result ✓']
+        },
+        codex: {
+          kicker: 'AI CODING PARTNER', title: 'Codex', icon: 'spark', tone: 'orange',
+          description: '자연어 요구사항을 기반으로 코드 생성, 수정, 실행 및 검증을 지원하는 AI 개발 도구입니다.',
+          chips: ['질문', '코드 작성', '실행', '수정 ✓']
+        },
+        sql: {
+          kicker: 'DATABASE LANGUAGE', title: 'SQL', icon: 'database', tone: 'green',
+          description: '관계형 데이터베이스에서 데이터를 조회, 필터링, 집계 및 변경하기 위한 표준 질의 언어입니다.',
+          chips: ['SELECT', 'WHERE', 'GROUP BY', 'JOIN']
+        },
+        'server-setup': {
+          kicker: 'BACKEND · STEP 1', title: '서버 환경 세팅', icon: 'server', tone: '',
+          description: '데이터 처리 코드가 안정적으로 돌아갈 사내 클라우드 서버 또는 C-DEP 작업 공간을 준비합니다.',
+          chips: ['CLOUD', 'C-DEP', 'Python 3', 'ready ✓']
+        },
+        collect: {
+          kicker: 'BACKEND · STEP 2', title: '데이터 수집', icon: 'database', tone: 'green',
+          description: '데이터베이스, 파일, API 등 여러 원천 시스템에서 서비스에 필요한 데이터를 확보합니다.',
+          chips: ['DATABASE', 'CSV', 'API', 'RAW DATA']
+        },
+        preprocess: {
+          kicker: 'BACKEND · STEP 3', title: '전처리·가공', icon: 'filter', tone: 'orange',
+          description: '결측값과 오류 데이터를 정제하고 분석 로직에 적합하도록 스키마와 형식을 표준화합니다.',
+          chips: ['clean()', 'merge()', 'null 제거', '정리 완료 ✓']
+        },
+        algorithm: {
+          kicker: 'BACKEND · STEP 4', title: '알고리즘 수행', icon: 'brain', tone: '',
+          description: '정제된 데이터에 분석 규칙과 계산 로직을 적용하여 분류, 예측 또는 최종 산출물을 생성합니다.',
+          chips: ['INPUT', 'RULES', 'MODEL', 'OUTPUT']
+        },
+        parquet: {
+          kicker: 'BACKEND · STEP 5', title: 'Parquet 저장', icon: 'file', tone: 'green',
+          description: '가공 결과를 압축률과 조회 성능이 우수한 Parquet 형식으로 변환하여 사내 서버에 저장합니다.',
+          chips: ['data.parquet', '압축', '빠른 조회', 'SERVER ↓']
+        },
+        ubuntu: {
+          kicker: 'FRONTEND · STEP 1', title: 'Ubuntu 환경', icon: 'linux', tone: 'orange',
+          description: '집 PC에 Ubuntu 기반 로컬 개발 환경을 구성하여 웹 애플리케이션 구현 및 테스트 환경을 확보합니다.',
+          chips: ['Ubuntu', 'Terminal', 'Node.js', 'workspace']
+        },
+        'vscode-codex': {
+          kicker: 'FRONTEND · STEP 2', title: 'VS Code + Codex', icon: 'spark', tone: '',
+          description: 'VS Code에서 Codex와 대화하며 실제 데이터 연결 코드와 웹 화면 코드를 함께 작성합니다.',
+          chips: ['VS CODE', 'CODEX', 'prompt →', 'code ✓']
+        },
+        webpage: {
+          kicker: 'FRONTEND · STEP 3', title: '웹페이지 완성', icon: 'layout', tone: 'green',
+          description: '백엔드 데이터셋을 표, 차트, 사용자 입력 요소 등 웹 기반 사용자 인터페이스로 구현합니다.',
+          chips: ['HTML', 'CSS', 'DATA', 'CHART']
+        },
+        'direct-run': {
+          kicker: 'DEPLOY · OPTION 1', title: 'server.mjs 직접 실행', icon: 'terminal', tone: 'dark',
+          description: '사내 서버에서 Node.js 실행 명령을 통해 server.mjs 애플리케이션 프로세스를 직접 구동합니다.',
+          chips: ['node server.mjs', 'PORT 3000', 'RUNNING', 'http://...']
+        },
+        docker: {
+          kicker: 'DEPLOY · OPTION 2', title: 'Docker 실행', icon: 'container', tone: '',
+          description: '애플리케이션과 실행 환경을 컨테이너 이미지로 표준화하여 서버 또는 C-DEP에서 일관되게 구동합니다.',
+          chips: ['IMAGE', 'CONTAINER', 'PORT', 'DEPLOY ✓']
+        }
+      };
+
+      function openVisual(key, trigger) {
+        const data = visualData[key];
+        if (!data) return;
+        lastTrigger = trigger;
+        visualKicker.textContent = data.kicker;
+        visualTitle.textContent = data.title;
+        visualDescription.textContent = data.description;
+        visualIcon.setAttribute('href', `#i-${data.icon}`);
+        visualArt.className = `visual-art ${data.tone}`.trim();
+        visualArt.setAttribute('aria-label', `${data.title}을 상징하는 일러스트`);
+        visualChips.replaceChildren(...data.chips.map((label, index) => {
+          const chip = document.createElement('span');
+          chip.className = `art-chip ${['one', 'two', 'three', 'four'][index]}`;
+          chip.textContent = label;
+          return chip;
+        }));
+        visualModal.classList.add('open');
+        visualModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+        visualModal.querySelector('.visual-close').focus();
+      }
+
+      function closeVisual() {
+        if (!visualModal.classList.contains('open')) return;
+        visualModal.classList.remove('open');
+        visualModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        lastTrigger?.focus();
+      }
+
+      document.querySelectorAll('[data-visual]').forEach(trigger => {
+        trigger.setAttribute('aria-label', `${trigger.textContent.trim().replace(/\s+/g, ' ')} 대표 이미지 보기`);
+        trigger.addEventListener('click', () => openVisual(trigger.dataset.visual, trigger));
+        trigger.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openVisual(trigger.dataset.visual, trigger);
+          }
+        });
+      });
+      document.querySelectorAll('[data-modal-close]').forEach(button => button.addEventListener('click', closeVisual));
+
+      slides.forEach((slide, index) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'nav-dot' + (index === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', `${index + 1}번 슬라이드로 이동`);
+        dot.addEventListener('click', () => goTo(index));
+        nav.appendChild(dot);
+      });
+
+      function goTo(index) {
+        current = Math.max(0, Math.min(slides.length - 1, index));
+        if (window.innerWidth > 900) slidesWrap.style.transform = `translateY(-${current * 100}dvh)`;
+        slides.forEach((slide, i) => {
+          slide.classList.toggle('active-slide', i === current);
+          slide.setAttribute('aria-hidden', i === current ? 'false' : 'true');
+        });
+        [...nav.children].forEach((dot, i) => dot.classList.toggle('active', i === current));
+        counter.textContent = `${String(current + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+      }
+
+      document.getElementById('prev').addEventListener('click', () => goTo(current - 1));
+      document.getElementById('next').addEventListener('click', () => goTo(current + 1));
+
+      document.addEventListener('keydown', (event) => {
+        if (visualModal.classList.contains('open')) {
+          if (event.key === 'Escape') closeVisual();
+          return;
+        }
+        if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); goTo(current + 1); }
+        if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); goTo(current - 1); }
+        if (event.key === 'Home') goTo(0);
+        if (event.key === 'End') goTo(slides.length - 1);
+        if (event.key.toLowerCase() === 'f') {
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+          else document.exitFullscreen?.();
+        }
+      });
+
+      document.addEventListener('wheel', (event) => {
+        if (visualModal.classList.contains('open') || window.innerWidth <= 900 || wheelLocked || Math.abs(event.deltaY) < 18) return;
+        wheelLocked = true;
+        goTo(current + (event.deltaY > 0 ? 1 : -1));
+        setTimeout(() => wheelLocked = false, reduceMotion ? 80 : 760);
+      }, { passive: true });
+
+      document.addEventListener('touchstart', event => touchStartY = event.touches[0].clientY, { passive: true });
+      document.addEventListener('touchend', event => {
+        if (visualModal.classList.contains('open') || window.innerWidth <= 900) return;
+        const delta = touchStartY - event.changedTouches[0].clientY;
+        if (Math.abs(delta) > 45) goTo(current + (delta > 0 ? 1 : -1));
+      }, { passive: true });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 900) goTo(current);
+        else slidesWrap.style.transform = 'none';
+      });
+
+      const query = new URLSearchParams(location.search);
+      const requestedSlide = Number(query.get('slide'));
+      goTo(Number.isInteger(requestedSlide) && requestedSlide > 0 ? requestedSlide - 1 : 0);
+      const requestedVisual = query.get('visual');
+      const initialTrigger = requestedVisual && [...document.querySelectorAll('[data-visual]')].find(trigger => trigger.dataset.visual === requestedVisual);
+      if (initialTrigger) openVisual(requestedVisual, initialTrigger);
+    })();
+  </script>
+</body>
+</html>
