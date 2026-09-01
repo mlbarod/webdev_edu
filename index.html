@@ -293,13 +293,15 @@
       background: #f8f9fc;
     }
     .domain-stage {
+      min-width: 0;
       min-height: 230px;
-      padding: 22px;
+      padding: 18px 20px 20px;
       position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      grid-template-rows: 24px 62px minmax(28px, auto) auto;
+      align-content: center;
+      justify-items: center;
+      gap: 8px;
       text-align: center;
       border: 2px solid #bfe9d7;
       border-radius: 24px;
@@ -310,21 +312,20 @@
       background: var(--purple-soft);
     }
     .domain-badge {
-      position: absolute;
-      left: 16px;
-      top: 14px;
-      padding: 6px 10px;
-      border-radius: 100px;
+      min-width: 0;
+      justify-self: start;
+      align-self: center;
+      padding: 2px 0;
       color: #126b47;
-      background: rgba(255,255,255,.86);
+      background: var(--green-soft);
       font-size: 11px;
       font-weight: 900;
       letter-spacing: .08em;
     }
-    .external .domain-badge { color: var(--purple); }
+    .external .domain-badge { color: var(--purple); background: var(--purple-soft); }
     .domain-icon {
       width: 62px; height: 62px;
-      margin-bottom: 14px;
+      margin: 0;
       display: grid;
       place-items: center;
       border-radius: 19px;
@@ -334,7 +335,7 @@
     }
     .external .domain-icon { color: var(--purple); }
     .domain-icon .icon { width: 31px; height: 31px; }
-    .domain-stage h3 { margin-bottom: 5px; font-size: clamp(17px, 1.55vw, 22px); }
+    .domain-stage h3 { margin: 0; align-self: center; font-size: clamp(17px, 1.55vw, 22px); line-height: 1.25; }
     .domain-stage p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
     .domain-arrow {
       color: #8d95a8;
@@ -659,6 +660,28 @@
     .visual-art.green { --art-color: var(--green); color: var(--green); background: linear-gradient(145deg, #e7faf2, #cef2e2); }
     .visual-art.orange { --art-color: var(--orange); color: var(--orange); background: linear-gradient(145deg, #fff2e9, #ffe1d1); }
     .visual-art.dark { --art-color: #fff; color: #fff; background: linear-gradient(145deg, #282d47, #171a2b); }
+    .visual-image {
+      display: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      object-fit: contain;
+      background: #eef0f4;
+    }
+    .visual-art.has-image {
+      min-height: 0;
+      aspect-ratio: 4 / 3;
+      color: inherit;
+      background: #eef0f4;
+      box-shadow: inset 0 0 0 1px rgba(29, 32, 52, .08);
+    }
+    .visual-art.has-image::before,
+    .visual-art.has-image .art-ring,
+    .visual-art.has-image .art-node,
+    .visual-art.has-image .art-main,
+    .visual-art.has-image .art-chip { display: none; }
+    .visual-art.has-image .visual-image { display: block; }
     .visual-art::before {
       content: "";
       position: absolute;
@@ -841,6 +864,11 @@
       .pipeline { grid-template-columns: repeat(3, 1fr); }
       .pipe-step::after { display: none; }
       .setup-layout, .deploy-layout { grid-template-columns: 1fr; }
+      .domain-flow { grid-template-columns: 1fr; grid-template-rows: auto; padding: 16px; }
+      .domain-stage, .domain-arrow, .iteration-loop { grid-column: 1; }
+      .domain-stage { min-height: 190px; }
+      .domain-arrow { rotate: 90deg; }
+      .security-line { display: none; }
       .nav, .controls, .counter, .hint { display: none; }
     }
 
@@ -851,11 +879,6 @@
       .journey, .card-grid.five, .card-grid.four, .pipeline, .summary-map { grid-template-columns: 1fr 1fr; }
       .card { min-height: 165px; }
       .frontend-flow, .transfer { grid-template-columns: 1fr; }
-      .domain-flow { grid-template-columns: 1fr; grid-template-rows: auto; padding: 16px; }
-      .domain-stage, .iteration-loop { grid-column: 1; }
-      .domain-stage { min-height: 190px; }
-      .domain-arrow { rotate: 90deg; }
-      .security-line { display: none; }
       .flow-arrow { rotate: 90deg; text-align: center; }
       .action-arrow { rotate: 90deg; }
       .deploy-choice { grid-template-columns: 1fr; }
@@ -1125,6 +1148,7 @@
         <span class="visual-tip">Esc 또는 바깥 영역을 누르면 닫힙니다</span>
       </div>
       <div class="visual-art" id="visual-art" role="img" aria-label="">
+        <img class="visual-image" id="visual-image" alt="" hidden>
         <div class="art-ring"></div>
         <span class="art-node n1"></span><span class="art-node n2"></span><span class="art-node n3"></span>
         <div class="art-main"><svg class="icon"><use id="visual-icon" href="#i-globe"/></svg></div>
@@ -1147,11 +1171,30 @@
 
       const visualModal = document.getElementById('visual-modal');
       const visualArt = document.getElementById('visual-art');
+      const visualImage = document.getElementById('visual-image');
       const visualIcon = document.getElementById('visual-icon');
       const visualChips = document.getElementById('visual-chips');
       const visualTitle = document.getElementById('visual-title');
       const visualDescription = document.getElementById('visual-description');
       const visualKicker = document.getElementById('visual-kicker');
+      const visualImages = {
+        github: 'assets/modal-examples/github.png',
+        terminal: 'assets/modal-examples/terminal.png',
+        vscode: 'assets/modal-examples/vscode.png',
+        python: 'assets/modal-examples/python.png',
+        codex: 'assets/modal-examples/codex.png',
+        sql: 'assets/modal-examples/sql.png',
+        'server-setup': 'assets/modal-examples/server-setup.png',
+        collect: 'assets/modal-examples/collect.png',
+        preprocess: 'assets/modal-examples/preprocess.png',
+        algorithm: 'assets/modal-examples/algorithm.png',
+        parquet: 'assets/modal-examples/parquet.png',
+        ubuntu: 'assets/modal-examples/ubuntu.png',
+        'vscode-codex': 'assets/modal-examples/vscode-codex.png',
+        webpage: 'assets/modal-examples/webpage.png',
+        'direct-run': 'assets/modal-examples/direct-run.png',
+        docker: 'assets/modal-examples/docker.png'
+      };
       const visualData = {
         github: {
           kicker: 'VERSION CONTROL', title: 'GitHub', icon: 'github', tone: '',
@@ -1233,13 +1276,17 @@
       function openVisual(key, trigger) {
         const data = visualData[key];
         if (!data) return;
+        const imageSrc = visualImages[key];
         lastTrigger = trigger;
         visualKicker.textContent = data.kicker;
         visualTitle.textContent = data.title;
         visualDescription.textContent = data.description;
         visualIcon.setAttribute('href', `#i-${data.icon}`);
-        visualArt.className = `visual-art ${data.tone}`.trim();
-        visualArt.setAttribute('aria-label', `${data.title}을 상징하는 일러스트`);
+        visualArt.className = `visual-art ${data.tone}${imageSrc ? ' has-image' : ''}`.trim();
+        visualImage.hidden = !imageSrc;
+        if (imageSrc) visualImage.src = imageSrc;
+        else visualImage.removeAttribute('src');
+        visualArt.setAttribute('aria-label', imageSrc ? `${data.title} 실제 사용 화면 예시` : `${data.title}을 상징하는 일러스트`);
         visualChips.replaceChildren(...data.chips.map((label, index) => {
           const chip = document.createElement('span');
           chip.className = `art-chip ${['one', 'two', 'three', 'four'][index]}`;
