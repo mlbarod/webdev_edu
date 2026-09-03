@@ -1177,6 +1177,7 @@
       const visualTitle = document.getElementById('visual-title');
       const visualDescription = document.getElementById('visual-description');
       const visualKicker = document.getElementById('visual-kicker');
+      const remoteVisualImageBase = 'https://raw.githubusercontent.com/mlbarod/webdev_edu/master/assets/modal-examples/';
       const visualImages = {
         github: 'assets/modal-examples/github.png',
         terminal: 'assets/modal-examples/terminal.png',
@@ -1284,8 +1285,14 @@
         visualIcon.setAttribute('href', `#i-${data.icon}`);
         visualArt.className = `visual-art ${data.tone}${imageSrc ? ' has-image' : ''}`.trim();
         visualImage.hidden = !imageSrc;
-        if (imageSrc) visualImage.src = imageSrc;
-        else visualImage.removeAttribute('src');
+        if (imageSrc) {
+          const fileName = imageSrc.split('/').pop();
+          visualImage.dataset.fallbackSrc = `${remoteVisualImageBase}${fileName}`;
+          visualImage.src = imageSrc;
+        } else {
+          delete visualImage.dataset.fallbackSrc;
+          visualImage.removeAttribute('src');
+        }
         visualArt.setAttribute('aria-label', imageSrc ? `${data.title} 실제 사용 화면 예시` : `${data.title}을 상징하는 일러스트`);
         visualChips.replaceChildren(...data.chips.map((label, index) => {
           const chip = document.createElement('span');
@@ -1298,6 +1305,20 @@
         document.body.classList.add('modal-open');
         visualModal.querySelector('.visual-close').focus();
       }
+
+      visualImage.addEventListener('error', () => {
+        const fallbackSrc = visualImage.dataset.fallbackSrc;
+        if (fallbackSrc) {
+          delete visualImage.dataset.fallbackSrc;
+          visualImage.src = fallbackSrc;
+          return;
+        }
+
+        const data = visualData[lastTrigger?.dataset.visual];
+        visualImage.hidden = true;
+        visualArt.classList.remove('has-image');
+        visualArt.setAttribute('aria-label', data ? `${data.title}을 상징하는 일러스트` : '대표 일러스트');
+      });
 
       function closeVisual() {
         if (!visualModal.classList.contains('open')) return;
